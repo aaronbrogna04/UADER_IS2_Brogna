@@ -30,8 +30,21 @@ else:
 # Detectar si es rango
 if "-" in entrada:
     partes = entrada.split("-")
-    desde = int(partes[0])
-    hasta = int(partes[1])
+
+    #Caso "-hasta" hacerlo desde 1
+    if partes[0] == "":
+        desde = 1
+        hasta = int(partes[1])
+
+    #Caso "desde-" hacerlo hasta 60
+    elif partes[1] == "":
+        desde = int(partes[0])
+        hasta = 60
+
+    #Caso normal, con ambos valores
+    else:
+        desde = int(partes[0])
+        hasta = int(partes[1])
 
     for i in range(desde, hasta + 1 ):
         print("Factorial ", i ,"! es ", factorial(i))
