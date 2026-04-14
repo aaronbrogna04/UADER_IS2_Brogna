@@ -1,15 +1,20 @@
 # VERSION 1.0
 
 #!/usr/bin/env python3
-import sys
+"""Evaluador de expresiones en notación polaca inversa (RPN)."""
+
 import math
+import sys
 
 
 class RPNError(Exception):
+    """Excepción personalizada para errores en la evaluación RPN."""
+
     pass
 
 
 def eval_rpn(tokens):
+    """Evalúa una lista de tokens en notación RPN y retorna el resultado."""
     stack = []
     mem = [0.0] * 10
 
@@ -140,6 +145,7 @@ def eval_rpn(tokens):
 
 
 def main():
+    """Función principal que procesa la entrada del usuario."""
     try:
         if len(sys.argv) > 1:
             expr = " ".join(sys.argv[1:])
