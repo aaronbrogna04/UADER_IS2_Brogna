@@ -1,11 +1,3 @@
-# Ejercicio 3 - Patrón Composite
-#*------------------------------------------------------------------------
-#* Ingeniería de Software II
-#* Patrones Estructurales
-#* Composite
-#* UADER - Ingeniería de Software II
-#*------------------------------------------------------------------------
-
 from abc import ABC, abstractmethod
 
 
