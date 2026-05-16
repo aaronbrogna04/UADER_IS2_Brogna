@@ -77,8 +77,7 @@ class MemoryState(State):
 		self.radio.state = self.radio.fmstate
 
 	def toggle_memory(self):
-		print("Cambiando a FM")
-		self.radio.state = self.radio.fmstate
+		pass  # Ya estamos en memorias, no hace nada
 
 #*--------- Construye la radio con todas sus formas de sintonía
 class Radio:
@@ -108,13 +107,14 @@ if __name__ == "__main__":
 	print("\nCrea un objeto radio y almacena las siguientes acciones")
 	radio = Radio()
 
-	# Secuencia: 3 escaneos FM → cambio a AM → 3 escaneos AM → cambio a memorias → 4 escaneos de memorias
+	# Secuencia: 3 escaneos FM → cambio a AM → 3 escaneos AM → cambio a memorias → 4 escaneos de memorias → vuelve a FM
 	actions = (
 		[radio.scan] * 3 +
 		[radio.toggle_amfm] +
 		[radio.scan] * 3 +
 		[radio.toggle_memory] +
-		[radio.scan] * 4
+		[radio.scan] * 4 +
+		[radio.toggle_amfm]
 	)
 	actions *= 2
 
