@@ -15,6 +15,7 @@ VERSION = "1.1"
 
 
 class BaseJasonReader(ABC):
+    """Interfaz abstracta para lectores de archivos JSON."""
 
     @abstractmethod
     def leer(self, jsonfile, jsonkey):
@@ -22,8 +23,10 @@ class BaseJasonReader(ABC):
 
 
 class JasonReaderLegacy(BaseJasonReader):
+    """Implementación legacy del lector JSON, sin patrón Singleton."""
 
     def leer(self, jsonfile, jsonkey):
+        """Lee un archivo JSON y retorna el valor de la clave indicada."""
         try:
             with open(jsonfile, "r", encoding="utf-8") as myfile:
                 data = myfile.read()
@@ -41,14 +44,18 @@ class JasonReaderLegacy(BaseJasonReader):
 
 
 class JasonReader(BaseJasonReader):
+    """Lector de archivos JSON implementado con patrón Singleton."""
+
     _instance = None
 
     def __new__(cls):
+        """Garantiza que solo exista una instancia de la clase."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def leer(self, jsonfile, jsonkey):
+        """Lee un archivo JSON y retorna el valor de la clave indicada."""
         try:
             with open(jsonfile, "r", encoding="utf-8") as myfile:
                 data = myfile.read()
@@ -66,13 +73,14 @@ class JasonReader(BaseJasonReader):
 
 
 def get_reader(use_legacy=False):
+    """Retorna la implementación activa del lector JSON."""
     if use_legacy:
         return JasonReaderLegacy()
     return JasonReader()
 
 
 def main():
-
+    """Punto de entrada principal del programa."""
     if len(sys.argv) == 2 and sys.argv[1] == "-v":
         print(f"getJason.py versión {VERSION}")
         sys.exit(0)
