@@ -88,6 +88,44 @@ class ProcesadorDePagos:
         print(f" -> Clave del banco: {clave_banco}")
         print(f" -> Saldo restante en {token}: ${self.cuentas[token]['saldo']}\n")
 
+class HistorialIterador:
+    """Iterador que recorre el historial de pagos en orden cronológico."""
+ 
+    def __init__(self, registros: list):
+        self._registros = registros
+        self._indice = 0
+ 
+    def __iter__(self):
+        return self
+ 
+    def __next__(self) -> dict:
+        if self._indice >= len(self._registros):
+            raise StopIteration
+        registro = self._registros[self._indice]
+        self._indice += 1
+        return registro
+ 
+ 
+class HistorialPagos:
+    """Colección de pagos realizados, iterable en orden cronológico."""
+ 
+    def __init__(self):
+        self._registros = []
+ 
+    def agregar(self, numero_pedido: int, token: str, monto: float):
+        """Registra un pago exitoso."""
+        self._registros.append({
+            "numero_pedido": numero_pedido,
+            "token": token,
+            "monto": monto,
+        })
+ 
+    def __iter__(self) -> HistorialIterador:
+        return HistorialIterador(self._registros)
+ 
+    def __len__(self) -> int:
+        return len(self._registros)
+
 
 # Gestión de cuentas bancarias: cada cuenta decide si procesa el pago
 # o lo delega a la siguiente según su saldo disponible
@@ -98,31 +136,33 @@ class CuentaHandler:
     """
 
     def __init__(self, token: str, saldo_inicial: float,
-                 archivo_datos: str, lector_json: JasonReader):
+                archivo_datos: str, lector_json: JasonReader,
+                historial: HistorialPagos):
         self._token = token
         self._saldo = saldo_inicial
         self._archivo_datos = archivo_datos
         self._lector_json = lector_json
+        self._historial = historial
         self._siguiente = None
-
+    
     def establecer_siguiente(self, siguiente):
         """Encadena el siguiente gestor y lo retorna para poder seguir encadenando."""
         self._siguiente = siguiente
         return siguiente
 
-    def manejar(self, monto: float) -> bool:
+    def manejar(self, numero_pedido: int, monto: float) -> bool:
         """Intenta procesar el pago; si no puede, lo delega al siguiente eslabón.
         Returns: True si el pago fue procesado, False si ningún gestor pudo atenderlo.
         """
         if self._saldo >= monto:
-            self._procesar(monto)
+            self._procesar(numero_pedido, monto)
             return True
         if self._siguiente is not None:
-            return self._siguiente.manejar(monto)
-        print(f"Pago rechazado: ninguna cuenta tiene saldo suficiente para ${monto}.")
+            return self._siguiente.manejar(numero_pedido, monto)
+        print(f"Pedido #{numero_pedido} rechazado: ninguna cuenta tiene saldo suficiente para ${monto}.")
         return False
 
-    def _procesar(self, monto: float) -> None:
+    def _procesar(self, numero_pedido: int, monto: float) -> None:
         """Descuenta el saldo e imprime el resultado del pago."""
         self._saldo -= monto
         clave_banco = self._lector_json.get_token_key(self._archivo_datos, self._token)
@@ -130,6 +170,7 @@ class CuentaHandler:
         print(f" -> Cuenta utilizada: {self._token}")
         print(f" -> Clave del banco : {clave_banco}")
         print(f" -> Saldo restante  : ${self._saldo}\n")
+        self._historial.agregar(numero_pedido, self._token, monto)
 
 class CuentaToken1(CuentaHandler):
     """Gestor concreto para la cuenta token1 (saldo inicial $1.000)."""
@@ -141,18 +182,37 @@ class CuentaToken2(CuentaHandler):
 def main():
     archivo_json = "sitedata.json"
     lector = JasonReader()
+    historial = HistorialPagos()
  
     print("Sistema de Pagos Automatizado\n")
  
-    # Construcción de la cadena: token1 ($1.000) -> token2 ($2.000)
-    cuenta1 = CuentaToken1("token1", 1000, archivo_json, lector)
-    cuenta2 = CuentaToken2("token2", 2000, archivo_json, lector)
-    cuenta1.establecer_siguiente(cuenta2)
+    cuenta1 = CuentaToken1("token1", 1000, archivo_json, lector, historial)
+    cuenta2 = CuentaToken2("token2", 2000, archivo_json, lector, historial)
  
-    # Pruebas: siempre se entra por el primer eslabón de la cadena
-    cuenta1.manejar(500)
-    cuenta1.manejar(500)
-    cuenta1.manejar(500)
+    # Pedidos alternados: impar entra por token1, par entra por token2.
+    # Si la cuenta de entrada no tiene saldo, la cadena intenta con la otra.
+    pedidos = [500, 500, 500, 500, 500, 500, 500]
+    for numero_pedido, monto in enumerate(pedidos, start=1):
+        if numero_pedido % 2 != 0:
+            cuenta1.establecer_siguiente(cuenta2)
+            cuenta2.establecer_siguiente(None)
+            cuenta1.manejar(numero_pedido, monto)
+        else:
+            cuenta2.establecer_siguiente(cuenta1)
+            cuenta1.establecer_siguiente(None)
+            cuenta2.manejar(numero_pedido, monto)
+ 
+    # Listado cronológico usando el iterator
+    print("=" * 50)
+    print("  HISTORIAL DE PAGOS (orden cronológico)")
+    print("=" * 50)
+    for registro in historial:
+        print(
+            f"  Pedido #{registro['numero_pedido']} | "
+            f"Token: {registro['token']} | "
+            f"Monto: ${registro['monto']}"
+        )
+    print("=" * 50)
 
 if __name__ == "__main__":
     main()
