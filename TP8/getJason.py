@@ -7,6 +7,8 @@ import json
 import sys
 from threading import Lock
 
+VERSION = "1.2"
+
 class JasonReader:
     _instancia = None
     _lock = Lock()
@@ -184,7 +186,7 @@ def main():
     lector = JasonReader()
     historial = HistorialPagos()
  
-    print("Sistema de Pagos Automatizado\n")
+    print(f"Sistema de Pagos Automatizado v{VERSION}\n")
  
     cuenta1 = CuentaToken1("token1", 1000, archivo_json, lector, historial)
     cuenta2 = CuentaToken2("token2", 2000, archivo_json, lector, historial)
